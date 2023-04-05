@@ -1,0 +1,12 @@
+name: las
+channels:
+  - conda-forge
+  - open3d-admin
+  - nodefaults
+dependencies:
+  - python=3.9
+  - numpy
+  - laspy
+  - pip
+  - pip:
+    - open3d
