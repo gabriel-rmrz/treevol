@@ -5,8 +5,11 @@ channels:
   - nodefaults
 dependencies:
   - python=3.9
+  - h5py
   - numpy
+  - pandas
   - laspy
+  - scikit-learn
   - pip
   - pip:
     - open3d
