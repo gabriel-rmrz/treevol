@@ -8,28 +8,30 @@ Install miniconda.
 
 Create the a new condda environment:
 
-'''
+```
 conda env create -f env_las.py  
-'''
+```
+
+
 ### Scripts
 
 #### toy_model.py
 - Reads a point cloud from a .las file
 - 
-'''
+```
 python toy_model.py
-'''
+```
 
 #### prepare_data_for_clustering.py
 
-'''
+```
 python prepare_data_for_clustering.py
-'''
+```
 
 #### clustering.py
-'''
+```
 python clustering.py
-'''
+```
 
 ## TO DO
 #### research and implement the clusterization of the point clouds.
