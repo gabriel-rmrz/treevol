@@ -40,6 +40,9 @@ python clustering.py
   - test as well what taking away the outliers do to the point of the leave, which are noise at the moment.
   - we could apply this method at two different heights and compere between them to improve the accuracy
   - make a script to prepare data for clustering
+- Add more features for the training like the RGB information (maybe the number id of the foto used for the reconstruction of the different points)
+- Try other metrics.
+
 #### Segmentation
 - for this part pointnet++ seems to be still the best option.
   - Make the test with the segmetation part.

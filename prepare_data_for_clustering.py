@@ -39,6 +39,8 @@ Z
 tree_bounding_box = o3d.geometry.AxisAlignedBoundingBox(
     min_bound=(913310, 24158, 1800),
     max_bound=(952870, 63934, 2200)
+#    min_bound=(913310, 24158, -4025),
+#    max_bound=(952870, 63934, 10285)
 )
 
 # Filtraggio della nuvola di punti sull'albero
