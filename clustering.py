@@ -2,6 +2,7 @@ import h5py
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import CLUEstering as clue
 
 from sklearn.cluster import KMeans
 
@@ -22,7 +23,7 @@ print(xy_prj.shape)
 min_n_clusters = 50
 max_n_clusters = 110
 step_n_clusters = 5
-
+''' k-means
 wcss = []
 for n_clusters in range(min_n_clusters, max_n_clusters, step_n_clusters):
   kmeans = KMeans(n_clusters=n_clusters, n_init = 10, random_state=8)
@@ -55,5 +56,10 @@ plt.clf()
 plt.plot(range(min_n_clusters,max_n_clusters, step_n_clusters),wcss)
 plt.savefig('plots/inertia.png')
 
+'''
 
+clust = clue.clusterer(1,50,1000)
+clust.readData(xyz_arr)
+clust.runCLUE()
+clust.clusterPlotter()
 
