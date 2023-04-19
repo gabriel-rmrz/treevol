@@ -8,16 +8,14 @@ from sklearn.cluster import KMeans
 
 # Lettura della nuvola di punti
 h5_infile = h5py.File('z_slice.h5', 'r')
-xyz_arr = h5_infile['slice'][:]
-h5_infile.close()
-
+xyzw_arr = h5_infile['slice'][:]
+xyzw_df = pd.DataFrame(xyzw_arr, columns=['x0', 'x1', 'x2', 'weight'])
 # Plotting input data
-plt.scatter(xyz_arr[:,0], xyz_arr[:,1],s=0.5)
+plt.scatter(xyzw_df['x0'], xyzw_df['x1'],s=0.5)
 plt.savefig('plots/scatter.png')
 plt.clf()
 
-xy_prj = xyz_arr[:,0:2]
-print(xy_prj.shape)
+xyw_df = xyzw_df[['x0','x1','weight']]
 
 # Clusterization
 min_n_clusters = 50
@@ -57,9 +55,14 @@ plt.plot(range(min_n_clusters,max_n_clusters, step_n_clusters),wcss)
 plt.savefig('plots/inertia.png')
 
 '''
+blob_test = clue.makeBlobs(1000,2)
+print(blob_test.head())
+#exit()
 
-clust = clue.clusterer(1,50,1000)
-clust.readData(xyz_arr)
+#clust = clue.clusterer(50,50,1000)
+clust = clue.clusterer(1,5,1.5)
+clust.readData(xyzw_df)
+#clust.readData(blob_test)
 clust.runCLUE()
 clust.clusterPlotter()
 

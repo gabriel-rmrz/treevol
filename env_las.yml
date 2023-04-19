@@ -5,6 +5,7 @@ channels:
   - nodefaults
 dependencies:
   - python=3.9
+  - cxx-compiler
   - h5py
   - numpy
   - pandas
@@ -12,4 +13,5 @@ dependencies:
   - scikit-learn
   - pip
   - pip:
+    - CLUEStering
     - open3d

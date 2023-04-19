@@ -2,11 +2,16 @@ import open3d as o3d
 import h5py
 import laspy
 import numpy as np
+import pandas as pd
 
 # Lettura della nuvola di punti
 input_file = '../pointnet2/data/Area_2_LAS_5.las'
 h5_outfile = h5py.File('z_slice.h5', 'w')
 las = laspy.read(input_file)
+'''
+print(list(las.point_format.dimension_names))
+exit()  
+'''
 
 point_data = np.stack([las.X, las.Y, las.Z], axis=0).transpose((1,0))
 point_color = np.stack([las.red, las.green, las.blue], axis=0).transpose((1,0))
@@ -37,8 +42,8 @@ Z
 -4026
 '''
 tree_bounding_box = o3d.geometry.AxisAlignedBoundingBox(
-    min_bound=(913310, 24158, 1800),
-    max_bound=(952870, 63934, 2200)
+    min_bound=(913310, 24158, 1000),
+    max_bound=(952870, 63934, 1100)
 #    min_bound=(913310, 24158, -4025),
 #    max_bound=(952870, 63934, 10285)
 )
@@ -59,9 +64,15 @@ viewer.destroy_window()
 # Plotting xy projection
 
 xyz_arr = np.asarray(tree_geom.points)/1000 # Changing unit from mm to m
-h5_outfile.create_dataset('slice', data=xyz_arr)
-h5_outfile.close()
+xyz_df = pd.DataFrame(xyz_arr, columns=['x0', 'x1', 'x2'])
+xyz_df['x0'] = xyz_df['x0'] - xyz_df['x0'].min()
+xyz_df['x1'] = xyz_df['x1'] - xyz_df['x1'].min()
+xyz_df['x2'] = xyz_df['x2'] - xyz_df['x2'].min()
+xyz_df['weights']=1
 
+#xyz_df.to_hdf('z_slice.h5','df', mode='w')
+h5_outfile.create_dataset('slice', data=xyz_df)
+h5_outfile.close()
 
 
 
