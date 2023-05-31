@@ -63,7 +63,7 @@ def get_trunk_pointcloud(pointcloud, slice_width):
   center_of_mass = tree_mesh_0.get_center()
   slice_arr = np.asarray(tree_geom_slice_0.points)
   r = np.sqrt((slice_arr[:,0] - center_of_mass[0])**2 + (slice_arr[:,1] - center_of_mass[1])**2)
-  rcut = 1.5*r.max()
+  rcut = 3*r.max()
   tree_coord_arr = np.asarray(outliers.points)
   tree_colors_arr = np.asarray(outliers.colors)
   tree_arr = np.concatenate([tree_coord_arr,tree_colors_arr], axis=1)
@@ -85,8 +85,10 @@ if __name__ == '__main__':
   #plane_model, inliers = geom.segment_plane(distance_threshold=.1,  ransac_n=3, num_iterations=500)
   plane_model, inliers = geom.segment_plane(distance_threshold=500.,  ransac_n=3, num_iterations=500)
   outliers = geom.select_by_index(inliers, invert=True)
+  inliers = geom.select_by_index(inliers, invert=False)
   
-  #o3d.visualization.draw_geometries([outliers])
+  # o3d.visualization.draw_geometries([inliers])
+
   
   # Definizione della bounding box dell'albero
   tree_geom = get_tree_pointcloud(outliers)
@@ -143,6 +145,5 @@ if __name__ == '__main__':
   
   
   # Visualization of the results.
-  
 
   run_viewer(trunk_geom, trunk_mesh_all)
