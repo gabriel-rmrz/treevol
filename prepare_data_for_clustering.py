@@ -19,6 +19,10 @@ def make_slice(outliers, slice_limits):
     4425.0
     481.514
     '''
+    x_min = 913310
+    y_min = 24158
+    x_max = 952870
+    y_max = 63934
     tree_bounding_box = o3d.geometry.AxisAlignedBoundingBox(
         min_bound=(913310, 24158, slice_limits[i]),
         max_bound=(952870, 63934, slice_limits[i+1])
@@ -62,8 +66,8 @@ def make_slice(outliers, slice_limits):
     print(xyz_arr[:,1].max())
     print(xyz_arr[:,2].max())
     xyz_df = pd.DataFrame(xyz_arr, columns=['x0', 'x1', 'x2'])
-    xyz_df['x0'] = xyz_df['x0'] - xyz_df['x0'].min()
-    xyz_df['x1'] = xyz_df['x1'] - xyz_df['x1'].min()
+    xyz_df['x0'] = xyz_df['x0'] - x_min/1000 
+    xyz_df['x1'] = xyz_df['x1'] - y_min/1000 
     xyz_df['x2'] = xyz_df['x2'] - xyz_df['x2'].min()
     xyz_df['weights']=1
     xyz_df['r'] = xyz_colors_arr[:,0] 
@@ -119,7 +123,8 @@ def main():
   '''
   #slice_limits = [1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100]
   #slice_limits = [2000, 2200, 2400, 2600, 2800, 3000]
-  slice_limits = [2000, 2300, 2600, 2900, 3200, 3500]
+  #slice_limits = [2000, 2300, 2600, 2900, 3200, 3500]
+  slice_limits = [2000, 2150]
   #slice_limits = [30000, 40000]
   make_slice(outliers, slice_limits)
 

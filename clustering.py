@@ -1,10 +1,12 @@
 import os
 import math
 import h5py
+import json
 import numpy as np
 import pandas as pd
 import awkward as awk
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import CLUEstering as clue
 import cv2 as cv
 
@@ -72,29 +74,75 @@ def clusterization_kmeans():
   plt.plot(range(min_n_clusters,max_n_clusters, step_n_clusters),wcss)
   plt.savefig('plots/inertia.png')
 
-def clusterization_clue(slice_range):
-  # Lettura della nuvola di punti
-  infile_name = 'slice_z_%d_%d' % (slice_range[0], slice_range[1])
-  h5_infile = h5py.File('data/'+infile_name+'.h5', 'r')
-  xyzw_arr = h5_infile['slice'][:]
-  df = pd.DataFrame(xyzw_arr, columns=['x0', 'x1', 'x2', 'weight','r','g','b'])
-  df = df.sample(frac=0.2)
+def calc_eff(df):
   xyzw_df = df[['x0','x1','x2','weight']]
   rgb_df = df[['r','g','b']]
   #rgb_df = pd.DataFrame(xyzw_arr[:,4:], columns=['r', 'g', 'b'])
   # Plotting input data
+  
+  fig, ax = plt.subplots(figsize=(10,10))
+  ax.scatter(xyzw_df['x0'], xyzw_df['x1'],s=0.5)
+  with open('tree_info.json','r') as treeFile:
+    #print(treeFile.read())
+    treeInfo = json.loads(treeFile.read())
+    for idx, td in treeInfo['tree_description'].items():
+      x = td['x1']
+      y = td['y1']
+      delta_x = td['x2'] - td['x1']
+      delta_y = td['y2'] - td['y1']
+      cx = x + delta_x/2
+      cy = y + delta_y/2
+
+      ecolor = 'b'
+      fcolor = 'b'
+      if (td['isValid'] == 0):
+        ecolor = 'r'
+        fcolor = 'r'
+      if (td['isBifurcated'] == 1):
+        ecolor = 'g'
+        fcolor = 'g'
+      if (td['isFelled'] == 1):
+        ecolor = 'black'
+        fcolor = 'black'
+
+      rect = patches.Rectangle((x,y), delta_x, delta_y, linewidth=1, edgecolor=ecolor, facecolor=fcolor,alpha=0.5)
+      ax.add_artist(rect)
+      ax.annotate('T '+idx, (cx, cy), color='black', weight='bold', fontsize=6, ha='center', va='center')
+
+      print(td['x1'])
+  ax.grid()
+  plt.savefig('plots/patches.png')
+
+
+def get_df(slice_range):
+  infile_name = 'slice_z_%d_%d' % (slice_range[0], slice_range[1])
+  h5_infile = h5py.File('data/'+infile_name+'.h5', 'r')
+  xyzw_arr = h5_infile['slice'][:]
+  df = pd.DataFrame(xyzw_arr, columns=['x0', 'x1', 'x2', 'weight','r','g','b'])
+  df = df.sample(frac=0.4, random_state=1)
+  return df
+
+def clusterization_clue(df, slice_range):
+  xyzw_df = df[['x0','x1','x2','weight']]
+  rgb_df = df[['r','g','b']]
+  #rgb_df = pd.DataFrame(xyzw_arr[:,4:], columns=['r', 'g', 'b'])
+  # Plotting input data
+  
+  plt.figure(figsize=(10,10))
   plt.scatter(xyzw_df['x0'], xyzw_df['x1'],s=0.5)
+  plt.grid()
   if not os.path.exists('plots/'+infile_name):
     os.makedirs('plots/' + infile_name)
   if not os.path.exists('plots/'+infile_name+'/subcluster'):
     os.makedirs('plots/' + infile_name+ '/subcluster')
   if not os.path.exists('plots/'+infile_name+'/cluster'):
     os.makedirs('plots/' + infile_name+ '/cluster')
+  print('Saving plots/' + infile_name + '_scatter.png image')
   plt.savefig('plots/' + infile_name + '_scatter.png')
   plt.clf()
+  exit()
   
   xyw_df = xyzw_df[['x0','x1','weight']]
-  
   
   '''
   dc = 0.3
@@ -112,6 +160,9 @@ def clusterization_clue(slice_range):
   plt.plot(xyw_df.x0, xyw_df.x1, marker='o', linestyle='', markersize=0.5)
   cl_meanx = []
   cl_meany = []
+  fit_x_center = []
+  fit_y_center = []
+  fit_radius = []
   for i in range(0, labels.max(),1):
     cluster = xyzw_df[labels==i]
     cluster_rgb = rgb_df[labels==i]
@@ -143,8 +194,9 @@ def clusterization_clue(slice_range):
     plt.savefig('plots/'+infile_name + '/cluster/histo_cl_'+str(i)+'.png')
     plt.clf()
 
-    xbins = np.arange(cluster.x0.min(), cluster.x0.max(), 0.01)
-    ybins = np.arange(cluster.x1.min(), cluster.x1.max(), 0.01)
+    resolution = 0.01
+    xbins = np.arange(cluster.x0.min(), cluster.x0.max(), resolution)
+    ybins = np.arange(cluster.x1.min(), cluster.x1.max(), resolution)
     dist_map = [[0 for n in range(len(xbins)-1)] for j in range(len(ybins) -1)]
     
 
@@ -160,40 +212,70 @@ def clusterization_clue(slice_range):
     if (len(dist_map) != 0):
       plt.imshow(dist_map, interpolation='none', cmap=plt.cm.Purples, origin='lower')
       plt.savefig('plots/'+infile_name + '/cluster/map_cl_'+str(i)+'.png')
-    
       plt.clf()
-      img =100*np.asarray(dist_map)
+      img =30*np.asarray(dist_map)
       img_cv = img.astype(np.uint8)
-      img_cv = cv.medianBlur(img_cv,3)
+      #img_cv = cv.medianBlur(img_cv,3)
+      img_cv = cv.GaussianBlur(img_cv,(3,3),0)
       plt.imshow(img_cv, interpolation='none', cmap=plt.cm.Greens, origin='lower')
       plt.savefig('plots/'+infile_name + '/cluster/map_blurred_cl_'+str(i)+'.png')
 
       #img_gray = cv.cvtColor(img_cv, cv.COLOR_RGB2GRAY)
       circles = cv.HoughCircles(img_cv,cv.HOUGH_GRADIENT,1.5, 20, param1=10,param2=15,minRadius=5, maxRadius=30)
       plt.clf()
-      fig, ax = plt.subplots()
-      ax = plt.gca()
-      ax.cla()
-      ax.plot(cluster.x0, cluster.x1, marker='o', linestyle='', color='black', markersize=0.7)
-      if circles is not None:
-        print(circles)
-        circles_i = np.uint16(np.around(circles))
 
+      if circles is not None:
+        plt.figure(4)
+        circles_i = np.uint16(np.around(circles))
         output = np.asarray([[0 for n in range(len(xbins)-1)] for j in range(len(ybins) -1)])
         output = cv.medianBlur(output.astype(np.uint8),3)
         img_cv = cv.cvtColor(img_cv, cv.COLOR_GRAY2BGR)
         output = cv.cvtColor(output, cv.COLOR_GRAY2BGR)
-        for (xcir,ycir,rcir) in circles_i[:,0]:
+        plt.figure(4)
+        fig, ax = plt.subplots()
+        ax.cla()
+        #plt.subplots()
+        ax.plot(cluster.x0, cluster.x1, marker='o', linestyle='', color='black', markersize=0.7)
+        for (xcir,ycir,rcir) in circles_i[0,:]:
           # draw the outer circle
           cv.circle(img_cv,(xcir,ycir),rcir,(0,255,0),1)
           cv.circle(img_cv, (xcir, ycir), 1, (0, 0, 255), 2)
-          circle = plt.Circle((cluster.x0.min() + xcir/100 , cluster.x1.min() + ycir/100), rcir/100, color='b', fill = False) #the fit is made in cm
-          ax.add_patch(circle)
+
+          x_center = cluster.x0.min() + xcir*resolution
+          y_center = cluster.x1.min() + ycir*resolution
+          radius = rcir*resolution
+          circle_fig = plt.Circle((cluster.x0.min() + xcir*resolution, cluster.x1.min() + ycir*resolution), rcir*resolution, color='b', fill = False) #the fit is made in cm
+          ax.add_patch(circle_fig)
+          print ("x_center: %4.2f" % x_center)
+          print ("y_center: %4.2f" % y_center)
+          print ("radius: %4.2f" % radius)
+        plt.savefig('plots/'+infile_name + '/cluster/scatter_fit_cl_'+str(i)+'.png')
+        plt.clf()
+        plt.figure(5)
+        plt.clf()
+        print(cluster.x0.min() + circles[0,:][0][0] *resolution)
+        print(cluster.x1.min() + circles[0,:][0][1] *resolution)
+        print( circles[0,:][0][2] *resolution)
+        x_center_0 = cluster.x0.min() + circles[0,:][0][0]*resolution
+        y_center_0 = cluster.x1.min() + circles[0,:][0][1]*resolution
+        radius_0 = circles[0,:][0][2]*resolution
+        fit_x_center.append(cluster.x0.min() + circles[0,:][0][0] *resolution)
+        fit_y_center.append(cluster.x1.min() + circles[0,:][0][1] *resolution)
+        fit_radius.append(circles[0,:][0][2] *resolution)
+
+
+        cluster_filtered = cluster[np.sqrt((cluster.x0- x_center_0)**2 + (cluster.x1 -y_center_0)**2) < 1.2*radius_0]
+        print("normal vector x component: ",cluster_filtered.x0.mean() - x_center_0)
+        print("normal vector y component: ",cluster_filtered.x1.mean() - y_center_0)
+        print("normal vector z component: ",cluster_filtered.x2.mean() - cluster_filtered.x2.max() )
+        print(np.sqrt((cluster.x0- x_center_0)**2 + (cluster.x1 -y_center_0)**2) < 1.2*radius_0)
+        plt.plot(cluster_filtered.x0, cluster_filtered.x1, marker='o', linestyle='', markersize=1.0, color='midnightblue')
+        plt.savefig('plots/'+infile_name+'/cluster/scatter_filtered_'+str(i) + '.png')
+
         #cv.imshow('detected circles',np.hstack([img_cv,output]))
         cv.imshow('detected circles',output)
         #cv.imwrite('plots/'+infile_name + '/cluster/cicle_fit_cl_'+str(i)+'.png', np.hstack([img_cv,output]))
         cv.imwrite('plots/'+infile_name + '/cluster/cicle_fit_cl_'+str(i)+'.png', img_cv)
-      fig.savefig('plots/'+infile_name + '/cluster/sccatter_fit_cl_'+str(i)+'.png')
       
     '''
   
@@ -223,7 +305,7 @@ def clusterization_clue(slice_range):
   plt.figure(2)
   plt.savefig('plots/' + infile_name + '_scatter_all.png')
   plt.clf()
-  return cl_meanx, cl_meany
+  return cl_meanx, cl_meany, fit_x_center, fit_y_center, fit_radius
   
   #clust.clusterPlotter()
 
@@ -231,30 +313,51 @@ def main():
   #slice_limits = [1300, 1400, 1500]
   #slice_limits = [1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100]
   #slice_limits = [2000, 2200, 2400, 2600, 2800, 3000]
-  slice_limits = [2000, 2300, 2600, 2900, 3200, 3500]
-  #slice_limits = [40000, 60000]
+  #slice_limits = [2000, 2300, 2600, 2900, 3200, 3500]
+  slice_limits = [2000, 2150]
 
   x_all = []
   y_all = []
   z_all = []
+  xc_all = []
+  yc_all = []
+  r_all = []
   for i in range(len(slice_limits) -1):
     slice_range = [slice_limits[i],slice_limits[i+1]]
-    x, y= clusterization_clue(slice_range)
+    df = get_df(slice_range)
+    calc_eff(df)
+    exit()
+    x, y, fit_x_center, fit_y_center, fit_radius = clusterization_clue(df,slice_range)
     z =np.ones(len(x))*slice_limits[i]
     x_all.append(x)
     y_all.append(y)
     z_all.append(z)
+    z =np.ones(len(fit_x_center))*slice_limits[i]
+    xc_all.append(fit_x_center)
+    yc_all.append(fit_y_center)
+    r_all.append(fit_radius)
     
     #ax.plot(x, y, 'r+', zdir='y', zs=1.5)
-  fig=plt.figure()
-  ax= fig.add_subplot(111, projection= '3d')
+  fig_, ax_=plt.subplots(figsize=(10,10))
+  fig_ = plt.gcf()
+  ax_ = plt.gca()
+  ax_.cla()
+  #ax= fig.add_subplot(111, projection= '3d')
   for i in range(len(slice_limits) -1):
-    ax.scatter(x_all[i],y_all[i],z_all[i])
+    ax_.scatter(x_all[i],y_all[i], color='goldenrod')
+    for xc, (yc, r) in zip(xc_all[i],zip(yc_all[i],r_all[i])):
+      print(xc)
+      print(yc)
+      print(r)
+      circle = plt.Circle( (xc, yc), 3*r, color='b', fill=False)
+      ax_.add_artist(circle)
   plt.savefig('test_magico.png')
-  plt.clf()
+  exit()
   ax2= fig.add_subplot(111)
+  for i in range(len(slice_limits) -1):
+    ax2.scatter(x_all[i],y_all[i])
+  plt.savefig('test_magico_2.png')
 
-  max_seed = 3
   n_sections = len(slice_limits)
   h5_outfile = h5py.File("results/tree_clusters_matching.h5", 'w')
   for i in range(n_sections -1):
@@ -301,7 +404,6 @@ def main():
     #print(tracks)
     #print(tracks_dist)
   h5_outfile.close()
-  plt.savefig('test_magico_2.png')
   
 if __name__ == '__main__':
   main()
