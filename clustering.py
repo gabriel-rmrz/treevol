@@ -123,6 +123,7 @@ def get_df(slice_range):
   return df
 
 def clusterization_clue(df, slice_range):
+  infile_name = 'slice_z_%d_%d' % (slice_range[0], slice_range[1])
   xyzw_df = df[['x0','x1','x2','weight']]
   rgb_df = df[['r','g','b']]
   #rgb_df = pd.DataFrame(xyzw_arr[:,4:], columns=['r', 'g', 'b'])
@@ -140,7 +141,6 @@ def clusterization_clue(df, slice_range):
   print('Saving plots/' + infile_name + '_scatter.png image')
   plt.savefig('plots/' + infile_name + '_scatter.png')
   plt.clf()
-  exit()
   
   xyw_df = xyzw_df[['x0','x1','weight']]
   
@@ -326,7 +326,6 @@ def main():
     slice_range = [slice_limits[i],slice_limits[i+1]]
     df = get_df(slice_range)
     calc_eff(df)
-    exit()
     x, y, fit_x_center, fit_y_center, fit_radius = clusterization_clue(df,slice_range)
     z =np.ones(len(x))*slice_limits[i]
     x_all.append(x)
@@ -338,21 +337,20 @@ def main():
     r_all.append(fit_radius)
     
     #ax.plot(x, y, 'r+', zdir='y', zs=1.5)
-  fig_, ax_=plt.subplots(figsize=(10,10))
-  fig_ = plt.gcf()
-  ax_ = plt.gca()
-  ax_.cla()
+  fig, ax=plt.subplots(figsize=(10,10))
+  fig = plt.gcf()
+  ax = plt.gca()
+  ax.cla()
   #ax= fig.add_subplot(111, projection= '3d')
   for i in range(len(slice_limits) -1):
-    ax_.scatter(x_all[i],y_all[i], color='goldenrod')
+    ax.scatter(x_all[i],y_all[i], color='goldenrod')
     for xc, (yc, r) in zip(xc_all[i],zip(yc_all[i],r_all[i])):
       print(xc)
       print(yc)
       print(r)
       circle = plt.Circle( (xc, yc), 3*r, color='b', fill=False)
-      ax_.add_artist(circle)
+      ax.add_artist(circle)
   plt.savefig('test_magico.png')
-  exit()
   ax2= fig.add_subplot(111)
   for i in range(len(slice_limits) -1):
     ax2.scatter(x_all[i],y_all[i])

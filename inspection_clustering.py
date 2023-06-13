@@ -41,17 +41,16 @@ def run_viewer(pointcloud, meshes=None):
     for m in meshes:
       viewer.add_geometry(m)
   #opt.background_color = np.asarray([0.0, 0.0, 0.0])
-  '''
   ctr.convert_from_pinhole_camera_parameters(parameters)
-  viewer.get_view_control().set_front([-0.31514718595924335, -0.81724359719245454, 0.48248850144838423])
-  viewer.get_view_control().set_lookat([933147.0, 44109.5, 3129.5])
-  viewer.get_view_control().set_up([-0.19318902082705131, 0.55299295208179833, 0.81047936258719344])
-  viewer.get_view_control().set_zoom(1.7)
-  #viewer.reset_view_point(True)
-  '''
-  viewer.run()
+  ctr.rotate(10.0, 0.0)
   img = viewer.capture_screen_float_buffer(True)
   plt.imshow(np.asarray(img))
+  ctr.convert_from_pinhole_camera_parameters(parameters)
+  #viewer.get_view_control().set_front([-0.31514718595924335, -0.81724359719245454, 0.48248850144838423])
+  #viewer.get_view_control().set_lookat([933147.0, 44109.5, 3129.5])
+  #viewer.get_view_control().set_up([-0.19318902082705131, 0.55299295208179833, 0.81047936258719344])
+  #ctr.set_zoom(1.7)
+  viewer.run()
   plt.savefig('test_o3d.png')
 
   viewer.destroy_window()
@@ -59,7 +58,7 @@ def run_viewer(pointcloud, meshes=None):
 
 if __name__ == '__main__':
   # Lettura della nuvola di punti
-  input_file = '../pointnet2/data/Area_2_LAS_5.las'
+  input_file = 'data/Area_2_LAS_5.las'
   las = laspy.read(input_file)
   geom = get_pointcloud(las, isRGB=True)
 
@@ -79,11 +78,11 @@ if __name__ == '__main__':
   10285
   '''
 
-  delta_x1 = 28.5
-  delta_y1 = 29
+  delta_x1 = 2
+  delta_y1 = 23
 
-  delta_x2 = 31.3
-  delta_y2 = 33
+  delta_x2 = 5
+  delta_y2 = 28
 
   tree_bounding_box = o3d.geometry.AxisAlignedBoundingBox(
       #min_bound=(913310, 24158, -4026),
