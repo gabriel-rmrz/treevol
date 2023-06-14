@@ -1,3 +1,4 @@
+import os
 import open3d as o3d
 import h5py
 import laspy
@@ -5,9 +6,9 @@ import numpy as np
 import pandas as pd
 
 
-def make_slice(outliers, slice_limits):
+def make_slice(baseDir,outliers, slice_limits):
   for i in range(len(slice_limits) -1):
-    outfile_name = 'data/slice_z_%d_%d.h5' % (slice_limits[i], slice_limits[i+1])
+    outfile_name = '%s/data/slice_z_%d_%d.h5' % (baseDir, slice_limits[i], slice_limits[i+1])
     h5_outfile = h5py.File(outfile_name, 'w')
     '''
     min
@@ -80,13 +81,25 @@ def make_slice(outliers, slice_limits):
   return 0
   
 
-def main():
+
+def make_dir_structure(baseDir):
+  if not os.path.exists(baseDir):
+    print("Creating directory '{}'...".format(baseDir))
+    os.makedirs(baseDir)
+    print("Creating directory '{}/data'...".format(baseDir))
+    os.makedirs(baseDir+'/data')
+  else:
+    print("Directory '{}' already exists. Please delete it or change it the value of baseDir".format(baseDir))
+    return 0
+  return 1
+
+def prepare(baseDir, config):
+  if not make_dir_structure(baseDir):
+    return 0
   # Lettura della nuvola di punti
-  input_file = '../pointnet2/data/Area_2_LAS_5.las'
-  #input_file = 'data/Roma_Milvio_ridotta.las'
-  #input_file = 'data/Roma_Milvio.las'
+  inputFile = config.pointCloud()
   #input_file = '../pointnet2/data/Area1_01_Output_laz1_4_colourised.laz'
-  las = laspy.read(input_file)
+  las = laspy.read(inputFile)
   '''
   print(list(las.point_format.dimension_names))
   exit()  
@@ -124,10 +137,7 @@ def main():
   #slice_limits = [1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100]
   #slice_limits = [2000, 2200, 2400, 2600, 2800, 3000]
   #slice_limits = [2000, 2300, 2600, 2900, 3200, 3500]
-  slice_limits = [2000, 2150]
+  slice_limits = config.slice_limits()
   #slice_limits = [30000, 40000]
   make_slice(outliers, slice_limits)
-
-if __name__=='__main__':
-  main()
 
