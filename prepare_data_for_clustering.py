@@ -82,20 +82,8 @@ def make_slice(baseDir,outliers, slice_limits):
   
 
 
-def make_dir_structure(baseDir):
-  if not os.path.exists(baseDir):
-    print("Creating directory '{}'...".format(baseDir))
-    os.makedirs(baseDir)
-    print("Creating directory '{}/data'...".format(baseDir))
-    os.makedirs(baseDir+'/data')
-  else:
-    print("Directory '{}' already exists. Please delete it or change it the value of baseDir".format(baseDir))
-    return 0
-  return 1
 
 def prepare(baseDir, config):
-  if not make_dir_structure(baseDir):
-    return 0
   # Lettura della nuvola di punti
   inputFile = config.pointCloud()
   #input_file = '../pointnet2/data/Area1_01_Output_laz1_4_colourised.laz'
