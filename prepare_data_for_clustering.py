@@ -139,5 +139,5 @@ def prepare(baseDir, config):
   #slice_limits = [2000, 2300, 2600, 2900, 3200, 3500]
   slice_limits = config.slice_limits()
   #slice_limits = [30000, 40000]
-  make_slice(outliers, slice_limits)
+  make_slice(baseDir, outliers, slice_limits)
 
