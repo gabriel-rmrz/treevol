@@ -10,7 +10,6 @@ class Configuration(dict):
   values personalised for every particular point cloud.
   '''
   def __init__(self,cData):
-    print("here")
     print(cData)
     if isinstance(cData,dict):
       super().__init__(cData)

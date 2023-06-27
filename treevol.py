@@ -48,6 +48,10 @@ def parse_command_line(argv):
   parser_clustering = subparsers.add_parser('clustering', help='Use clustering algorithm si isolate individual trees')
   add_common_config(parser_clustering)
   add_common_options(parser_clustering)
+  parser_eff = subparsers.add_parser('calc_eff', help='Compute efficiency for the different algorithms')
+  add_common_config(parser_eff)
+  add_common_options(parser_eff)
+
   return parser.parse_args(argv)
 
 def main(argv=None):
@@ -63,6 +67,9 @@ def main(argv=None):
   elif args.command == 'clustering':
     from clustering import clustering
     clustering(args.baseDir,Configuration(args.config))
+  elif args.command == 'calc_eff':
+    from calc_eff import calc_eff
+    calc_eff(args.baseDir,Configuration(args.config))
 
 if __name__ == '__main__':
   status = main()

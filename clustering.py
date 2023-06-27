@@ -75,45 +75,6 @@ def clusterization_kmeans(baseDir):
   plt.plot(range(min_n_clusters,max_n_clusters, step_n_clusters),wcss)
   plt.savefig('plots/inertia.png')
 
-def calc_eff(df, baseDir):
-  plots_dir = baseDir + '/plots/'
-  xyzw_df = df[['x0','x1','x2','weight']]
-  rgb_df = df[['r','g','b']]
-  #rgb_df = pd.DataFrame(xyzw_arr[:,4:], columns=['r', 'g', 'b'])
-  # Plotting input data
-  
-  fig, ax = plt.subplots(figsize=(10,10))
-  ax.scatter(xyzw_df['x0'], xyzw_df['x1'],s=0.5)
-  with open('tree_info.json','r') as treeFile:
-    #print(treeFile.read())
-    treeInfo = json.loads(treeFile.read())
-    for idx, td in treeInfo['tree_description'].items():
-      x = td['x1']
-      y = td['y1']
-      delta_x = td['x2'] - td['x1']
-      delta_y = td['y2'] - td['y1']
-      cx = x + delta_x/2
-      cy = y + delta_y/2
-
-      ecolor = 'b'
-      fcolor = 'b'
-      if (td['isValid'] == 0):
-        ecolor = 'r'
-        fcolor = 'r'
-      if (td['isBifurcated'] == 1):
-        ecolor = 'g'
-        fcolor = 'g'
-      if (td['isFelled'] == 1):
-        ecolor = 'black'
-        fcolor = 'black'
-
-      rect = patches.Rectangle((x,y), delta_x, delta_y, linewidth=1, edgecolor=ecolor, facecolor=fcolor,alpha=0.5)
-      ax.add_artist(rect)
-      ax.annotate('T '+idx, (cx, cy), color='black', weight='bold', fontsize=6, ha='center', va='center')
-
-      print(td['x1'])
-  ax.grid()
-  plt.savefig(plots_dir+'patches.png')
 
 
 def get_df(baseDir, slice_range):
@@ -219,7 +180,7 @@ def clusterization_clue(df, baseDir, clue_params, slice_range):
       plt.savefig(plots_dir+infile_name + '/cluster/map_blurred_cl_'+str(i)+'.png')
 
       #img_gray = cv.cvtColor(img_cv, cv.COLOR_RGB2GRAY)
-      circles = cv.HoughCircles(img_cv,cv.HOUGH_GRADIENT,1.5, 20, param1=10,param2=15,minRadius=5, maxRadius=30)
+      circles = cv.HoughCircles(img_cv,cv.HOUGH_GRADIENT,1.5, 50, param1=10,param2=15,minRadius=5, maxRadius=30)
       plt.clf()
 
       if circles is not None:
@@ -234,13 +195,21 @@ def clusterization_clue(df, baseDir, clue_params, slice_range):
         ax.cla()
         #plt.subplots()
         ax.plot(cluster.x0, cluster.x1, marker='o', linestyle='', color='black', markersize=0.7)
-        for (xcir,ycir,rcir) in circles_i[0,:]:
+        for j, (xcir,ycir,rcir) in enumerate(circles_i[0,:]):
           # draw the outer circle
           cv.circle(img_cv,(xcir,ycir),rcir,(0,255,0),1)
           cv.circle(img_cv, (xcir, ycir), 1, (0, 0, 255), 2)
 
           x_center = cluster.x0.min() + xcir*resolution
           y_center = cluster.x1.min() + ycir*resolution
+          
+          r_from_center = np.sqrt((cluster.x0 -x_center)**2 + (cluster.x1 - y_center)**2)
+
+          plt.figure(6)
+          plt.hist(r_from_center, 30, color='black', alpha=0.3)
+          plt.savefig(plots_dir+infile_name + '/cluster/profile_from_center_'+str(i)+'_'+str(j)+'.png')
+          plt.clf()
+          plt.figure(4)
           radius = rcir*resolution
           circle_fig = plt.Circle((cluster.x0.min() + xcir*resolution, cluster.x1.min() + ycir*resolution), rcir*resolution, color='b', fill = False) #the fit is made in cm
           ax.add_patch(circle_fig)
@@ -307,31 +276,8 @@ def clusterization_clue(df, baseDir, clue_params, slice_range):
   
   #clust.clusterPlotter()
 
-def clustering(baseDir, config):
-  slice_limits = config.slice_limits()
-  clue_params = config.clue_params()
 
-  x_all = []
-  y_all = []
-  z_all = []
-  xc_all = []
-  yc_all = []
-  r_all = []
-  for i in range(len(slice_limits) -1):
-    slice_range = [slice_limits[i],slice_limits[i+1]]
-    df = get_df(baseDir, slice_range)
-    calc_eff(df, baseDir)
-    x, y, fit_x_center, fit_y_center, fit_radius = clusterization_clue(df, baseDir,clue_params,  slice_range)
-    z =np.ones(len(x))*slice_limits[i]
-    x_all.append(x)
-    y_all.append(y)
-    z_all.append(z)
-    z =np.ones(len(fit_x_center))*slice_limits[i]
-    xc_all.append(fit_x_center)
-    yc_all.append(fit_y_center)
-    r_all.append(fit_radius)
-    
-    #ax.plot(x, y, 'r+', zdir='y', zs=1.5)
+def layer_match(baseDir, slice_limits, x_all, y_all, fit_x_all, fit_y_all, fit_r_all):
   fig, ax=plt.subplots(figsize=(10,10))
   fig = plt.gcf()
   ax = plt.gca()
@@ -339,10 +285,7 @@ def clustering(baseDir, config):
   #ax= fig.add_subplot(111, projection= '3d')
   for i in range(len(slice_limits) -1):
     ax.scatter(x_all[i],y_all[i], color='goldenrod')
-    for xc, (yc, r) in zip(xc_all[i],zip(yc_all[i],r_all[i])):
-      print(xc)
-      print(yc)
-      print(r)
+    for xc, (yc, r) in zip(fit_x_all[i],zip(fit_y_all[i],fit_r_all[i])):
       circle = plt.Circle( (xc, yc), 3*r, color='b', fill=False)
       ax.add_artist(circle)
   plt.savefig('{}/plots/test_magico.png'.format(baseDir))
@@ -350,10 +293,16 @@ def clustering(baseDir, config):
   for i in range(len(slice_limits) -1):
     ax2.scatter(x_all[i],y_all[i])
   plt.savefig('test_magico_2.png')
-
   n_sections = len(slice_limits)
   h5_outfile = h5py.File(baseDir+"/results/tree_clusters_matching.h5", 'w')
+  h5_outfile_clusters = h5py.File(baseDir+"/results/cluster_fitted_center.h5", 'w')
   for i in range(n_sections -1):
+    df_cluster = pd.DataFrame()
+    df_cluster['x_center_fit'] = fit_x_all[i]
+    df_cluster['y_center_fit'] = fit_y_all[i]
+    df_cluster['r_fit'] = fit_y_all[i]
+    h5_outfile_clusters.create_dataset('slice_ref_%d'%(i), data=df_cluster)
+
     tracks = [[[] for k in range(len(x_all[i]))] for l in range(n_sections-1-i)]
     tracks_dist = [[[] for k in range(len(x_all[i]))] for l in range(n_sections-1-i)]
     xcord = [[[] for k in range(len(x_all[i]))] for l in range(n_sections-1-i)]
@@ -391,10 +340,39 @@ def clustering(baseDir, config):
         df["s%d_cl_ycord"%(m)] = np.squeeze(np.asarray(ycord[m-i]))
         #print("i %d, m %d"%(i,m))
         #print(tracks[m-i])
-    print(df)
+    print(df_cluster)
     h5_outfile.create_dataset('slice_ref_%d'%(i), data=df)
 
     #print(tracks)
     #print(tracks_dist)
+  h5_outfile_clusters.close()
   h5_outfile.close()
   
+
+def clustering(baseDir, config):
+  slice_limits = config.slice_limits()
+  clue_params = config.clue_params()
+
+  x_all = []
+  y_all = []
+  z_all = []
+  fit_x_all = []
+  fit_y_all = []
+  fit_r_all = []
+  for i in range(len(slice_limits) -1):
+    slice_range = [slice_limits[i],slice_limits[i+1]]
+    df = get_df(baseDir, slice_range)
+    x, y, fit_x_center, fit_y_center, fit_radius = clusterization_clue(df, baseDir,clue_params,  slice_range)
+    z =np.ones(len(x))*slice_limits[i]
+    x_all.append(x)
+    y_all.append(y)
+    z_all.append(z)
+    z =np.ones(len(fit_x_center))*slice_limits[i]
+    fit_x_all.append(fit_x_center)
+    fit_y_all.append(fit_y_center)
+    fit_r_all.append(fit_radius)
+    
+    #ax.plot(x, y, 'r+', zdir='y', zs=1.5)
+  layer_match(baseDir, slice_limits, x_all, y_all, fit_x_all, fit_y_all, fit_r_all)
+
+
