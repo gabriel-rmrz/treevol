@@ -11,9 +11,9 @@ def save_points_to_file(points, filename, las, colors=None):
   las_data = laspy.LasData(header)
 
   # Assign the new point data
-  las_data.x = points[:, 0]
-  las_data.y = points[:, 1]
-  las_data.z = points[:, 2]
+  las_data.X = points[:, 0]
+  las_data.Y = points[:, 1]
+  las_data.Z = points[:, 2]
 
   if colors is not None:
     las_data.red = colors[:, 0]
@@ -27,9 +27,9 @@ def main():
   input_file = 'Area_2_LAS_15.las'
   las = laspy.read(input_file)
   
-  point_data = np.vstack([las.X, las.Y, las.Z]).transpose()
+  point_data = np.stack([las.X, las.Y, las.Z], axis=0).transpose((1,0))
   if hasattr(las, 'red') and hasattr(las, 'green') and hasattr(las, 'blue'):
-    point_color = np.vstack([las.red, las.green, las.blue]).transpose()
+    point_color = np.stack([las.red, las.green, las.blue], axis=0).transpose((1,0))
     point_color  = point_color
   
   ''' 
